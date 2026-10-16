@@ -98,27 +98,25 @@ object CoreConfigManager {
 
         val json = JsonUtil.parseString(raw)?.takeIf { it.isJsonObject }?.asJsonObject ?: return result
 
-        // Inject or remove traffic statistics configuration based on user preference
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) == true) {
-            if (!json.has("stats")) {
-                json.add("stats", JsonObject())
-            }
-            if (!json.has("policy")) {
-                val policyObj = JsonObject()
+        // SwiftNG: always inject traffic statistics - the status card shows real-time up/down speed
+        if (!json.has("stats")) {
+            json.add("stats", JsonObject())
+        }
+        if (!json.has("policy")) {
+            val policyObj = JsonObject()
+            val systemObj = JsonObject()
+            systemObj.addProperty("statsOutboundUplink", true)
+            systemObj.addProperty("statsOutboundDownlink", true)
+            policyObj.add("system", systemObj)
+            json.add("policy", policyObj)
+        } else {
+            // Ensure the stats-related system block exists alongside any user-defined policy
+            val policyObj = json.get("policy").asJsonObject
+            if (!policyObj.has("system")) {
                 val systemObj = JsonObject()
                 systemObj.addProperty("statsOutboundUplink", true)
                 systemObj.addProperty("statsOutboundDownlink", true)
                 policyObj.add("system", systemObj)
-                json.add("policy", policyObj)
-            }
-        } else {
-            json.remove("stats")
-            // Keep user-defined policy levels, only strip the stats-related system block
-            json.get("policy")?.takeIf { it.isJsonObject }?.asJsonObject?.let { policy ->
-                policy.remove("system")
-                if (policy.entrySet().isEmpty()) {
-                    json.remove("policy")
-                }
             }
         }
 
@@ -725,13 +723,11 @@ object CoreConfigManager {
     }
 
     /**
-     * Remove speed-test runtime sections when the feature is disabled.
+     * SwiftNG: traffic stats are always kept - the status card shows real-time up/down speed.
+     * (Upstream stripped stats/policy when PREF_SPEED_ENABLED was off, which broke our speed display.)
      */
     private fun applySpeedDisabled(v2rayConfig: V2rayConfig) {
-        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) != true) {
-            v2rayConfig.stats = null
-            v2rayConfig.policy?.system = null
-        }
+        // no-op: keep stats and policy.system from the config template
     }
 
     /*
