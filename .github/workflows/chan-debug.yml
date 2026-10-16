@@ -67,6 +67,11 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleDebug
 
+    - name: List build outputs
+      run: |
+        find ${{ github.workspace }}/V2rayNG/app/build/outputs -type f -name "*.apk" 2>/dev/null || echo "No APKs found"
+        ls -la ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/ 2>/dev/null || echo "No apk dir"
+
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
