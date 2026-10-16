@@ -108,6 +108,7 @@ class MainViewModel(
 
     private val testRequests = MainTestRequests()
     private var bulkTestJob: Job? = null
+    private var autoSelectAfterTest = false // ChanNG: auto-select best server after test
 
     private val initialPageReady = CompletableDeferred<Unit>()
 
@@ -278,6 +279,7 @@ class MainViewModel(
             MainAction.RefreshGroups -> setupGroupTab(forceRefresh = true)
             MainAction.TestAllServers -> testAllRealPing(true)
             MainAction.TestRealAllServers -> testAllRealPing()
+            MainAction.AutoSelectBestServer -> autoSelectBestServer()
             MainAction.CancelTesting -> cancelAllPing()
             MainAction.RemoveAllServers -> removeAllServerAsync()
             MainAction.RemoveDuplicateServers -> removeDuplicateServerAsync()
@@ -827,6 +829,31 @@ class MainViewModel(
         }
     }
 
+    // ChanNG: auto-select the server with lowest latency
+    fun autoSelectBestServer() {
+        val servers = currentServers()
+        if (servers.isEmpty()) return
+        // If already have test results, select best immediately
+        val tested = servers.filter { it.testDelayMillis > 0 }
+        if (tested.isNotEmpty()) {
+            selectBestServer()
+        } else {
+            // Otherwise test all first, then auto-select
+            autoSelectAfterTest = true
+            testAllRealPing(true)
+        }
+    }
+
+    private fun selectBestServer() {
+        val servers = currentServers()
+        val best = servers.filter { it.testDelayMillis > 0 }
+            .minByOrNull { it.testDelayMillis }
+        if (best != null) {
+            updateSelectedGuid(best.guid)
+        }
+        autoSelectAfterTest = false
+    }
+
     fun testAllRealPing(onlyTcp: Boolean = false) {
         cancelAllPing()
         val groupId = uiState.value.selectedGroupId
@@ -893,6 +920,11 @@ class MainViewModel(
     private fun onTestsFinished(requestId: String) {
         if (testRequests.completeBulk(requestId) == null) return
         resetTestStatus()
+        // ChanNG: auto-select best server after test completes
+        if (autoSelectAfterTest) {
+            autoSelectAfterTest = false
+            selectBestServer()
+        }
         viewModelScope.launch(ioDispatcher) {
             cacheMutex.withLock { groupDataCache.clear() }
             reloadAllGroups(_uiState.value.groups.map { it.id })
