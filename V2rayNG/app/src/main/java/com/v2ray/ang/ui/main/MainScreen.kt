@@ -220,6 +220,12 @@ fun MainScreen(
                         onTestClick = { onAction(MainAction.TestCurrentServer) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    // ChanNG: auto-select best server
+                    ChanAutoSelectCard(
+                        isTesting = uiState.isTesting,
+                        onClick = { onAction(MainAction.AutoSelectBestServer) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     if (groups.size > 1) {
                         GroupTabBar(
                             groups = groups,
