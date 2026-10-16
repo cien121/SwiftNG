@@ -16,9 +16,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
@@ -47,7 +44,6 @@ import com.v2ray.ang.ui.compose.QRCodeDialog
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     mainViewModel: MainViewModel,
@@ -88,9 +84,6 @@ fun MainScreen(
     }
 
     var shareTarget by remember { mutableStateOf<Triple<String, ProfileItem, Boolean>?>(null) }
-    // SwiftBox: node list bottom sheet
-    var showNodeSheet by remember { mutableStateOf(false) }
-    val nodeSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val removeServer: (String, String) -> Unit = { guid, profileName ->
         if (confirmRemove) {
             showRemoveConfirm = ServerDeleteTarget(guid, profileName)
@@ -176,16 +169,16 @@ fun MainScreen(
         QRCodeDialog(bitmap = shareQRCodeBitmap, onDismiss = { onAction(MainAction.DismissQRCodeDialog) })
     }
 
-    // SwiftNG: deep-purple gradient background for the whole app
+    // SwiftNG: purple-to-red gradient background for the whole app
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF2B1654),
-                        Color(0xFF1B1038),
-                        Color(0xFF0D0918)
+                        Color(0xFF3D1A5C),
+                        Color(0xFF4A1535),
+                        Color(0xFF220A14)
                     )
                 )
             )
@@ -246,7 +239,7 @@ fun MainScreen(
                     ChanQuickCards(
                         nodeName = displayText.substringBefore("\n"),
                         testResult = "",
-                        onNodeClick = { showNodeSheet = true },
+                        onNodeClick = { },
                         onTestClick = { onAction(MainAction.TestCurrentServer) },
                         ipAddress = ipAddress,
                         ipVersionTag = ipVersionTag
@@ -258,69 +251,48 @@ fun MainScreen(
                         onClick = { onAction(MainAction.AutoSelectBestServer) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // SwiftBox: status card at bottom, clickable as start/stop toggle
-                    ChanStatusCard(
-                        isRunning = isRunning,
-                        statusText = displayText,
-                        nodeName = displayText.substringBefore("\n"),
-                        latency = "",
-                        protocol = "",
-                        upSpeed = speedPair.first,
-                        downSpeed = speedPair.second,
-                        onClick = { onAction(MainAction.ToggleService) }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
-
-            // SwiftBox: node list bottom sheet (opaque dark, no blur)
-            if (showNodeSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showNodeSheet = false },
-                    sheetState = nodeSheetState,
-                    containerColor = Color(0xFF1C1C1E),
-                    contentColor = Color.White,
-                    scrimColor = Color(0x99000000)
-                ) {
-                    androidx.compose.foundation.layout.Column(
-                        modifier = Modifier.fillMaxSize()
+                    // SwiftNG: quick import entries above node list
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // SwiftNG: quick import entries
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilledTonalButton(
-                                onClick = { showNodeSheet = false; onAction(MainAction.ImportClipboard) },
-                                modifier = Modifier.weight(1f)
-                            ) { Text(stringResource(R.string.menu_item_import_config_clipboard)) }
-                            FilledTonalButton(
-                                onClick = { showNodeSheet = false; onAction(MainAction.ImportQRcode) },
-                                modifier = Modifier.weight(1f)
-                            ) { Text(stringResource(R.string.menu_item_import_config_qrcode)) }
-                            FilledTonalButton(
-                                onClick = { showNodeSheet = false; onAction(MainAction.ImportConfigLocal) },
-                                modifier = Modifier.weight(1f)
-                            ) { Text(stringResource(R.string.menu_item_import_config_local)) }
-                        }
-                        if (groups.size > 1) {
-                            GroupTabBar(
-                                groups = groups,
-                                selectedTabIndex = pagerState.currentPage.coerceIn(0, groups.lastIndex),
-                                mainViewModel = mainViewModel,
-                                onTabClick = { targetIndex ->
-                                    scope.launch {
-                                        pagerState.navigateToPageOptimized(
-                                            targetPage = targetIndex,
-                                            animateAdjacentPage = true
-                                        )
-                                    }
+                        FilledTonalButton(
+                            onClick = { onAction(MainAction.ImportClipboard) },
+                            modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.menu_item_import_config_clipboard)) }
+                        FilledTonalButton(
+                            onClick = { onAction(MainAction.ImportQRcode) },
+                            modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.menu_item_import_config_qrcode)) }
+                        FilledTonalButton(
+                            onClick = { onAction(MainAction.ImportConfigLocal) },
+                            modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.menu_item_import_config_local)) }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (groups.size > 1) {
+                        GroupTabBar(
+                            groups = groups,
+                            selectedTabIndex = pagerState.currentPage.coerceIn(0, groups.lastIndex),
+                            mainViewModel = mainViewModel,
+                            onTabClick = { targetIndex ->
+                                scope.launch {
+                                    pagerState.navigateToPageOptimized(
+                                        targetPage = targetIndex,
+                                        animateAdjacentPage = true
+                                    )
                                 }
-                            )
-                        }
-
+                            }
+                        )
+                    }
+                    // SwiftNG: node list inline on home page
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
                         HorizontalPager(
                             state = pagerState,
                             modifier = Modifier.fillMaxSize(),
@@ -341,7 +313,6 @@ fun MainScreen(
                                 lazyGridStates = lazyGridStates,
                                 onSelectServer = { guid ->
                                     onAction(MainAction.SelectServer(guid))
-                                    showNodeSheet = false
                                 },
                                 onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
                                 onShareServer = { guid, profile ->
@@ -355,11 +326,23 @@ fun MainScreen(
                                     start = 0.dp,
                                     top = 0.dp,
                                     end = 0.dp,
-                                    bottom = 80.dp
+                                    bottom = 8.dp
                                 )
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // SwiftBox: status card at the very bottom, clickable as start/stop toggle
+                    ChanStatusCard(
+                        isRunning = isRunning,
+                        statusText = displayText,
+                        nodeName = displayText.substringBefore("\n"),
+                        latency = "",
+                        protocol = "",
+                        upSpeed = speedPair.first,
+                        downSpeed = speedPair.second,
+                        onClick = { onAction(MainAction.ToggleService) }
+                    )
                 }
             }
         }
