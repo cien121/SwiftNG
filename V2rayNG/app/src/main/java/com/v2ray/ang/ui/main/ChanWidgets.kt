@@ -127,109 +127,73 @@ fun ChanStatusCard(
 }
 
 /**
- * Quick action cards - two small cards side by side
+ * Current node card - full width (SwiftNG: latency auto-refreshes every 60s, no manual test)
  */
 @Composable
 fun ChanQuickCards(
     nodeName: String,
-    testResult: String,
     onNodeClick: () -> Unit,
-    onTestClick: () -> Unit,
     modifier: Modifier = Modifier,
     ipAddress: String = "",
     ipVersionTag: String = ""
 ) {
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onNodeClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = iOSCardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        // Left: current node card
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClick = onNodeClick),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = iOSCardColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "当前节点",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF98989F)
-                )
+            Text(
+                text = "当前节点",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF98989F)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = nodeName.ifEmpty { "未选择" },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                maxLines = 1
+            )
+            // SwiftBox: IP + IPv4/IPv6 tag
+            if (ipAddress.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = nodeName.ifEmpty { "未选择" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White,
-                    maxLines = 1
-                )
-                // SwiftBox: IP + IPv4/IPv6 tag
-                if (ipAddress.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = ipAddress,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF98989F),
-                            maxLines = 1,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        if (ipVersionTag.isNotEmpty()) {
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(
-                                        if (ipVersionTag == "IPv6") Color(0xFF8B5CF6).copy(alpha = 0.25f)
-                                        else Color(0xFF3B82F6).copy(alpha = 0.25f)
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = ipVersionTag,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (ipVersionTag == "IPv6") Color(0xFFC4B5FD) else Color(0xFF93C5FD),
-                                    fontSize = 10.sp
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = ipAddress,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF98989F),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (ipVersionTag.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(
+                                    if (ipVersionTag == "IPv6") Color(0xFF8B5CF6).copy(alpha = 0.25f)
+                                    else Color(0xFF3B82F6).copy(alpha = 0.25f)
                                 )
-                            }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = ipVersionTag,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (ipVersionTag == "IPv6") Color(0xFFC4B5FD) else Color(0xFF93C5FD),
+                                fontSize = 10.sp
+                            )
                         }
                     }
                 }
-            }
-        }
-        // Right: speed test card
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClick = onTestClick),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = iOSCardColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "延迟测试",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF98989F)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = testResult.ifEmpty { "点击测试" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = iOSOrange,
-                    maxLines = 1
-                )
             }
         }
     }
