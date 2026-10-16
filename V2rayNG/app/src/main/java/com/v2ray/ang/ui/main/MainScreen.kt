@@ -58,11 +58,7 @@ fun MainScreen(
         ":" in ipAddress -> "IPv6"
         else -> "IPv4"
     }
-    // SwiftBox: selected server remarks as node name
-    val selectedServerName = remember(selectedGuid, uiState.status) {
-        // displayText already contains formatted info; use it for node card title
-        ""
-    }
+
     val groups = uiState.groups
     val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
     val isRunning = uiState.isRunning
