@@ -2,7 +2,6 @@ package com.v2ray.ang.ui.settings
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.viewModels
@@ -17,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,10 +49,8 @@ import com.v2ray.ang.ui.compose.SettingsEditItem
 import com.v2ray.ang.ui.compose.SettingsListItem
 import com.v2ray.ang.ui.compose.SettingsMenuItem
 import com.v2ray.ang.ui.compose.SettingsSwitchItem
-import com.v2ray.ang.ui.compose.ThemeManager
 import com.v2ray.ang.ui.compose.verticalScrollbar
 import com.v2ray.ang.util.LogUtil
-import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.launch
 
 class SettingsActivity : BaseComponentActivity() {
@@ -90,7 +86,6 @@ class SettingsActivity : BaseComponentActivity() {
         SettingsScreen(
             viewModel = viewModel,
             onBackClick = { finish() },
-            onModeHelpClicked = { Utils.openUri(this, AppConfig.APP_WIKI_MODE) },
             onSystemVpnSettingsClicked = ::openSystemVpnSettings
         )
     }
@@ -101,7 +96,6 @@ class SettingsActivity : BaseComponentActivity() {
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit,
-    onModeHelpClicked: () -> Unit,
     onSystemVpnSettingsClicked: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -159,14 +153,11 @@ fun SettingsScreen(
     var speedEnabled by rememberMmkvBool(AppConfig.PREF_SPEED_ENABLED, false)
     var confirmRemove by rememberMmkvBool(AppConfig.PREF_CONFIRM_REMOVE, false)
     var doubleColumnDisplay by rememberMmkvBool(AppConfig.PREF_DOUBLE_COLUMN_DISPLAY, false)
-    var groupAllDisplay by rememberMmkvBool(AppConfig.PREF_GROUP_ALL_DISPLAY, false)
     var language by remember {
         mutableStateOf(
             MmkvManager.decodeSettingsString(AppConfig.PREF_LANGUAGE, "auto") ?: "auto"
         )
     }
-    var uiModeNight by rememberMmkvString(AppConfig.PREF_UI_MODE_NIGHT, "0")
-    var dynamicColor by rememberMmkvBool(AppConfig.PREF_DYNAMIC_COLOR, true)
 
     var ipv6Enabled by rememberMmkvBool(AppConfig.PREF_IPV6_ENABLED, false)
     var preferIpv6 by rememberMmkvBool(AppConfig.PREF_PREFER_IPV6, false)
@@ -189,18 +180,8 @@ fun SettingsScreen(
     val effectiveLocalProxy = enableLocalProxy || localProxyForced
     val muxXudpConcurrencyInt = muxXudpConcurrency.toIntOrNull() ?: AppConfig.DEFAULT_MUX_XUDP_CONCURRENCY.toInt()
 
-    val dynamicColorSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    LaunchedEffect(dynamicColorSupported) {
-        if (!dynamicColorSupported && dynamicColor) {
-            dynamicColor = false
-            ThemeManager.setDynamicColorEnabled(false)
-        }
-    }
-
     val languageEntries = stringArrayResource(R.array.language_select).toList()
     val languageValues = stringArrayResource(R.array.language_select_value).toList()
-    val uiModeNightEntries = stringArrayResource(R.array.ui_mode_night).toList()
-    val uiModeNightValues = stringArrayResource(R.array.ui_mode_night_value).toList()
     val bypassLanEntries = stringArrayResource(R.array.vpn_bypass_lan).toList()
     val bypassLanValues = stringArrayResource(R.array.vpn_bypass_lan_value).toList()
     val interfaceAddrEntries = stringArrayResource(R.array.vpn_interface_address).toList()
@@ -266,25 +247,6 @@ fun SettingsScreen(
                         SettingsChangeManager.makeSetupGroupTab()
                     }
                 )
-                SettingsSwitchItem(
-                    title = stringResource(R.string.title_pref_group_all_display),
-                    summary = stringResource(R.string.summary_pref_group_all_display),
-                    checked = groupAllDisplay,
-                    onCheckedChange = {
-                        groupAllDisplay = it
-                        SettingsChangeManager.makeSetupGroupTab()
-                    }
-                )
-                SettingsSwitchItem(
-                    title = stringResource(R.string.title_pref_dynamic_color),
-                    summary = stringResource(R.string.summary_pref_dynamic_color),
-                    checked = dynamicColor,
-                    enabled = dynamicColorSupported,
-                    onCheckedChange = {
-                        dynamicColor = it
-                        ThemeManager.setDynamicColorEnabled(it)
-                    }
-                )
                 SettingsListItem(
                     title = stringResource(R.string.title_language),
                     entries = languageEntries,
@@ -293,16 +255,6 @@ fun SettingsScreen(
                     onSelected = {
                         language = it
                         AppLocaleManager.setApplicationLanguage(it)
-                    }
-                )
-                SettingsListItem(
-                    title = stringResource(R.string.title_pref_ui_mode_night),
-                    entries = uiModeNightEntries,
-                    values = uiModeNightValues,
-                    selectedValue = uiModeNight,
-                    onSelected = {
-                        uiModeNight = it
-                        ThemeManager.setThemeMode(it)
                     }
                 )
             }
@@ -685,10 +637,6 @@ fun SettingsScreen(
                     values = modeValues,
                     selectedValue = mode,
                     onSelected = { mode = it }
-                )
-                SettingsMenuItem(
-                    title = stringResource(R.string.title_mode_help),
-                    onClick = onModeHelpClicked
                 )
                 SettingsSwitchItem(
                     title = stringResource(R.string.title_root_mode_enabled),
