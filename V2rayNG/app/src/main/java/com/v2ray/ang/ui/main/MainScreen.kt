@@ -48,6 +48,21 @@ fun MainScreen(
     onNavigate: (MainDestination) -> Unit,
 ) {
     val uiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    // SwiftBox: real-time speed
+    val speedPair by mainViewModel.speedState.collectAsStateWithLifecycle()
+    // SwiftBox: extract IP and detect IPv4/IPv6 from connection test result
+    val connTestResult = (uiState.status as? MainStatus.ConnectionTest)?.result
+    val ipAddress = connTestResult?.ipAddress.orEmpty()
+    val ipVersionTag = when {
+        ipAddress.isEmpty() -> ""
+        ":" in ipAddress -> "IPv6"
+        else -> "IPv4"
+    }
+    // SwiftBox: selected server remarks as node name
+    val selectedServerName = remember(selectedGuid, uiState.status) {
+        // displayText already contains formatted info; use it for node card title
+        ""
+    }
     val groups = uiState.groups
     val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
     val isRunning = uiState.isRunning
@@ -223,29 +238,34 @@ fun MainScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    // iOS widget style cards (ChanNG customization)
-                    ChanStatusCard(
-                        isRunning = isRunning,
-                        statusText = displayText,
-                        nodeName = displayText,
-                        latency = "",
-                        protocol = ""
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    // SwiftBox: quick cards (node + test)
                     ChanQuickCards(
-                        nodeName = displayText,
+                        nodeName = displayText.substringBefore("\n"),
                         testResult = "",
                         onNodeClick = { showNodeSheet = true },
-                        onTestClick = { onAction(MainAction.TestCurrentServer) }
+                        onTestClick = { onAction(MainAction.TestCurrentServer) },
+                        ipAddress = ipAddress,
+                        ipVersionTag = ipVersionTag
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // ChanNG: auto-select best server
+                    // SwiftBox: auto-select best server
                     ChanAutoSelectCard(
                         isTesting = uiState.isTesting,
                         onClick = { onAction(MainAction.AutoSelectBestServer) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // SwiftBox: node list moved to bottom sheet (tap "当前节点" card to open)
+                    // SwiftBox: status card at bottom, clickable as start/stop toggle
+                    ChanStatusCard(
+                        isRunning = isRunning,
+                        statusText = displayText,
+                        nodeName = displayText.substringBefore("\n"),
+                        latency = "",
+                        protocol = "",
+                        upSpeed = speedPair.first,
+                        downSpeed = speedPair.second,
+                        onClick = { onAction(MainAction.ToggleService) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
 
