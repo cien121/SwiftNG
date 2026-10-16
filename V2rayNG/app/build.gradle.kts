@@ -13,8 +13,8 @@ android {
         applicationId = "com.chan.v2rayng"
         minSdk = 24
         targetSdk = 37
-        versionCode = 751
-        versionName = "2.3.11"
+        versionCode = 1006
+        versionName = "1.0.6-swiftng"
 
         val abiFilterList = (properties["ABI_FILTERS"] as? String)?.split(';')
         splits {
@@ -38,8 +38,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("swiftng") {
+            storeFile = file("swiftng-debug.keystore")
+            storePassword = "swiftng123"
+            keyAlias = "swiftng"
+            keyPassword = "swiftng123"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("swiftng")
+        }
         release {
+            signingConfig = signingConfigs.getByName("swiftng")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
