@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,16 @@ val iOSGreen = Color(0xFF30D158)
 val iOSRed = Color(0xFFFF453A)
 val iOSBlue = Color(0xFF0A84FF)
 val iOSOrange = Color(0xFFFF9F0A)
+
+// SwiftBox: purple-blue gradient theme
+val SwiftPurple = Color(0xFF8B5CF6)
+val SwiftBlue = Color(0xFF3B82F6)
+val SwiftGradient = Brush.horizontalGradient(listOf(SwiftPurple, SwiftBlue))
+val SwiftGradientVertical = Brush.verticalGradient(listOf(SwiftPurple, SwiftBlue))
+// Subtle dark gradient sheen for cards (dark, not flashy)
+val SwiftCardSheen = Brush.linearGradient(
+    listOf(Color(0xFF23232A), Color(0xFF1C1C1E), Color(0xFF1E1B2E))
+)
 
 /**
  * Top status card - iOS widget style
@@ -51,13 +62,12 @@ fun ChanStatusCard(
     downSpeed: String = "--",
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = iOSCardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(SwiftCardSheen)
     ) {
         Column(
             modifier = Modifier
@@ -197,16 +207,13 @@ fun ChanAutoSelectCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isTesting) Color(0xFF2C2C2E) else iOSBlue
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (isTesting) Brush.linearGradient(listOf(Color(0xFF2C2C2E), Color(0xFF2C2C2E))) else SwiftGradient)
+            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier
