@@ -13,6 +13,13 @@ sealed interface MainStatus {
     data class ConnectionTest(val result: ConnectionTestResult) : MainStatus
 }
 
+/** One-shot event after auto-selecting the best server. */
+data class AutoSelectEvent(
+    val serverName: String,
+    val delayMs: Long,
+    val restartNeeded: Boolean
+)
+
 /**
  * Main UI state
  */
@@ -26,7 +33,8 @@ data class MainUiState(
     val locateTarget: LocateTarget? = null,
     val confirmRemove: Boolean = false,
     val doubleColumnDisplay: Boolean = false,
-    val shareQRCodeBitmap: android.graphics.Bitmap? = null
+    val shareQRCodeBitmap: android.graphics.Bitmap? = null,
+    val autoSelectEvent: AutoSelectEvent? = null
 )
 
 /**
@@ -40,6 +48,7 @@ sealed interface MainAction {
     data object TestAllServers : MainAction
     data object TestRealAllServers : MainAction
     data object AutoSelectBestServer : MainAction
+    data object ConsumeAutoSelectEvent : MainAction
     data object CancelTesting : MainAction
     data object RemoveAllServers : MainAction
     data object RemoveDuplicateServers : MainAction
