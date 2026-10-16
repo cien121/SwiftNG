@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -57,6 +58,7 @@ import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.ui.base.HelperBaseComponentActivity
 import com.v2ray.ang.ui.compose.AppDropdownMenuItems
 import com.v2ray.ang.ui.compose.AppTopBar
+import com.v2ray.ang.ui.compose.SwiftGradientBackground
 import com.v2ray.ang.ui.compose.DeleteConfirmDialog
 import com.v2ray.ang.ui.compose.ItemDivider
 import com.v2ray.ang.ui.compose.NavigationBarsBottomPadding
@@ -268,7 +270,9 @@ internal fun UserAssetScreen(
     var deleteTarget by remember { mutableStateOf<AssetDeleteTarget?>(null) }
     val listState = rememberLazyListState()
 
+    SwiftGradientBackground {
     Scaffold(
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
         topBar = {
             AppTopBar(
@@ -341,6 +345,8 @@ internal fun UserAssetScreen(
             }
         }
     }
+    }
+
 
 
     deleteTarget?.let { asset ->
