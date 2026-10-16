@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.rememberDrawerState
@@ -27,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,6 +68,9 @@ fun MainScreen(
     }
 
     var shareTarget by remember { mutableStateOf<Triple<String, ProfileItem, Boolean>?>(null) }
+    // SwiftBox: node list bottom sheet
+    var showNodeSheet by remember { mutableStateOf(false) }
+    val nodeSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val removeServer: (String, String) -> Unit = { guid, profileName ->
         if (confirmRemove) {
             showRemoveConfirm = ServerDeleteTarget(guid, profileName)
@@ -85,6 +91,17 @@ fun MainScreen(
         val validGroupIds = groups.map { it.id }.toSet()
         lazyListStates.keys.retainAll(validGroupIds)
         lazyGridStates.keys.retainAll(validGroupIds)
+    }
+
+    // SwiftBox: handle auto-select event (restart service if needed)
+    val autoSelectEvent = uiState.autoSelectEvent
+    LaunchedEffect(autoSelectEvent) {
+        if (autoSelectEvent != null) {
+            if (autoSelectEvent.restartNeeded) {
+                onAction(MainAction.RestartService)
+            }
+            onAction(MainAction.ConsumeAutoSelectEvent)
+        }
     }
 
     LaunchedEffect(groups, uiState.selectedGroupId) {
@@ -216,7 +233,7 @@ fun MainScreen(
                     ChanQuickCards(
                         nodeName = displayText,
                         testResult = "",
-                        onNodeClick = { /* TODO: switch node */ },
+                        onNodeClick = { showNodeSheet = true },
                         onTestClick = { onAction(MainAction.TestCurrentServer) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -226,56 +243,76 @@ fun MainScreen(
                         onClick = { onAction(MainAction.AutoSelectBestServer) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (groups.size > 1) {
-                        GroupTabBar(
-                            groups = groups,
-                            selectedTabIndex = pagerState.currentPage.coerceIn(0, groups.lastIndex),
-                            mainViewModel = mainViewModel,
-                            onTabClick = { targetIndex ->
-                                scope.launch {
-                                    pagerState.navigateToPageOptimized(
-                                        targetPage = targetIndex,
-                                        animateAdjacentPage = true
-                                    )
+                    // SwiftBox: node list moved to bottom sheet (tap "当前节点" card to open)
+                }
+            }
+
+            // SwiftBox: node list bottom sheet (opaque dark, no blur)
+            if (showNodeSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showNodeSheet = false },
+                    sheetState = nodeSheetState,
+                    containerColor = Color(0xFF1C1C1E),
+                    contentColor = Color.White,
+                    scrimColor = Color(0x99000000)
+                ) {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        if (groups.size > 1) {
+                            GroupTabBar(
+                                groups = groups,
+                                selectedTabIndex = pagerState.currentPage.coerceIn(0, groups.lastIndex),
+                                mainViewModel = mainViewModel,
+                                onTabClick = { targetIndex ->
+                                    scope.launch {
+                                        pagerState.navigateToPageOptimized(
+                                            targetPage = targetIndex,
+                                            animateAdjacentPage = true
+                                        )
+                                    }
                                 }
-                            }
-                        )
-                    }
-
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = true,
-                        beyondViewportPageCount = 1,
-                        key = { page -> groups.getOrNull(page)?.id ?: "group-page-$page" }
-                    ) { page ->
-                        val group = groups.getOrNull(page) ?: return@HorizontalPager
-
-                        GroupPagerPage(
-                            groupId = group.id,
-                            mainViewModel = mainViewModel,
-                            selectedGuid = selectedGuid,
-                            locateTarget = uiState.locateTarget,
-                            doubleColumnDisplay = doubleColumnDisplay,
-                            searchQuery = searchQuery,
-                            lazyListStates = lazyListStates,
-                            lazyGridStates = lazyGridStates,
-                            onSelectServer = { guid -> onAction(MainAction.SelectServer(guid)) },
-                            onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
-                            onShareServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, false)
-                            },
-                            onMoreServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, true)
-                            },
-                            onRemoveServer = removeServer,
-                            contentPadding = PaddingValues(
-                                start = 0.dp,
-                                top = 0.dp,
-                                end = 0.dp,
-                                bottom = 80.dp
                             )
-                        )
+                        }
+
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize(),
+                            userScrollEnabled = true,
+                            beyondViewportPageCount = 1,
+                            key = { page -> groups.getOrNull(page)?.id ?: "group-page-$page" }
+                        ) { page ->
+                            val group = groups.getOrNull(page) ?: return@HorizontalPager
+
+                            GroupPagerPage(
+                                groupId = group.id,
+                                mainViewModel = mainViewModel,
+                                selectedGuid = selectedGuid,
+                                locateTarget = uiState.locateTarget,
+                                doubleColumnDisplay = doubleColumnDisplay,
+                                searchQuery = searchQuery,
+                                lazyListStates = lazyListStates,
+                                lazyGridStates = lazyGridStates,
+                                onSelectServer = { guid ->
+                                    onAction(MainAction.SelectServer(guid))
+                                    showNodeSheet = false
+                                },
+                                onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
+                                onShareServer = { guid, profile ->
+                                    shareTarget = Triple(guid, profile, false)
+                                },
+                                onMoreServer = { guid, profile ->
+                                    shareTarget = Triple(guid, profile, true)
+                                },
+                                onRemoveServer = removeServer,
+                                contentPadding = PaddingValues(
+                                    start = 0.dp,
+                                    top = 0.dp,
+                                    end = 0.dp,
+                                    bottom = 80.dp
+                                )
+                            )
+                        }
                     }
                 }
             }
