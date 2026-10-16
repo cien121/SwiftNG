@@ -238,9 +238,7 @@ fun MainScreen(
                     // SwiftBox: quick cards (node + test)
                     ChanQuickCards(
                         nodeName = displayText.substringBefore("\n"),
-                        testResult = "",
                         onNodeClick = { },
-                        onTestClick = { onAction(MainAction.TestCurrentServer) },
                         ipAddress = ipAddress,
                         ipVersionTag = ipVersionTag
                     )
