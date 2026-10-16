@@ -852,7 +852,7 @@ class MainViewModel(
         if (best != null) {
             updateSelectedGuid(best.guid)
             val restartNeeded = _uiState.value.isRunning
-            val name = best.profile.remarks.ifEmpty { best.profile.server.ifEmpty { best.guid } }
+            val name = best.profile.remarks.ifEmpty { best.profile.server?.ifEmpty { best.guid } ?: best.guid }
             // SwiftBox: user feedback + trigger service restart via UI event
             toast("已选择最快节点：$name（${best.testDelayMillis}ms）" + if (restartNeeded) "，正在重连…" else "")
             _uiState.update {
