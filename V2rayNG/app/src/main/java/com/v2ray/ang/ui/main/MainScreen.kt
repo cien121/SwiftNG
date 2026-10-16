@@ -1,6 +1,11 @@
 package com.v2ray.ang.ui.main
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Spacer
@@ -11,12 +16,14 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,10 +37,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.ui.compose.LocalDarkTheme
 import com.v2ray.ang.ui.compose.QRCodeDialog
@@ -169,6 +179,20 @@ fun MainScreen(
         QRCodeDialog(bitmap = shareQRCodeBitmap, onDismiss = { onAction(MainAction.DismissQRCodeDialog) })
     }
 
+    // SwiftNG: deep-purple gradient background for the whole app
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF2B1654),
+                        Color(0xFF1B1038),
+                        Color(0xFF0D0918)
+                    )
+                )
+            )
+    ) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -182,6 +206,7 @@ fun MainScreen(
         }
     ) {
         Scaffold(
+            containerColor = Color.Transparent,
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
             topBar = {
                 MainTopBar(
@@ -277,6 +302,26 @@ fun MainScreen(
                     androidx.compose.foundation.layout.Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        // SwiftNG: quick import entries
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledTonalButton(
+                                onClick = { showNodeSheet = false; onAction(MainAction.ImportClipboard) },
+                                modifier = Modifier.weight(1f)
+                            ) { Text(stringResource(R.string.menu_item_import_config_clipboard)) }
+                            FilledTonalButton(
+                                onClick = { showNodeSheet = false; onAction(MainAction.ImportQRcode) },
+                                modifier = Modifier.weight(1f)
+                            ) { Text(stringResource(R.string.menu_item_import_config_qrcode)) }
+                            FilledTonalButton(
+                                onClick = { showNodeSheet = false; onAction(MainAction.ImportConfigLocal) },
+                                modifier = Modifier.weight(1f)
+                            ) { Text(stringResource(R.string.menu_item_import_config_local)) }
+                        }
                         if (groups.size > 1) {
                             GroupTabBar(
                                 groups = groups,
@@ -337,3 +382,4 @@ fun MainScreen(
         }
     }
 }
+    }
