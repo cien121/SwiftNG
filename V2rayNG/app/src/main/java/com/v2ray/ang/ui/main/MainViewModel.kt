@@ -1026,18 +1026,17 @@ class MainViewModel(
         }
     }
 
-    // SwiftBox: poll real-time speed every 2s while running
+    // SwiftNG: poll real-time speed every 2s while running.
+    // NOTE: Go QueryAllOutboundTrafficStats() resets counters on each query
+    // (counter.Set(0)), so returned values are already per-interval deltas -
+    // do NOT subtract a previous reading.
     private fun startSpeedPolling() {
         stopSpeedPolling()
         speedPollJob = viewModelScope.launch(ioDispatcher) {
-            var lastUp = 0L
-            var lastDown = 0L
             var lastTime = System.currentTimeMillis()
-            // prime the baseline
+            // prime: discard counters accumulated before polling started
             try {
-                val stats = CoreServiceManager.queryAllOutboundTrafficStats()
-                lastUp = stats.filter { it.direction == AppConfig.UPLINK }.sumOf { it.value }
-                lastDown = stats.filter { it.direction == AppConfig.DOWNLINK }.sumOf { it.value }
+                CoreServiceManager.queryAllOutboundTrafficStats()
             } catch (_: Exception) { }
             while (true) {
                 delay(2000)
@@ -1052,11 +1051,11 @@ class MainViewModel(
                     val up = stats.filter { it.direction == AppConfig.UPLINK }.sumOf { it.value }
                     val down = stats.filter { it.direction == AppConfig.DOWNLINK }.sumOf { it.value }
                     if (dt > 0) {
-                        val upSpeed = ((up - lastUp) / dt).toLong().coerceAtLeast(0L).toSpeedString()
-                        val downSpeed = ((down - lastDown) / dt).toLong().coerceAtLeast(0L).toSpeedString()
+                        val upSpeed = (up / dt).toLong().coerceAtLeast(0L).toSpeedString()
+                        val downSpeed = (down / dt).toLong().coerceAtLeast(0L).toSpeedString()
                         _speedState.value = upSpeed to downSpeed
                     }
-                    lastUp = up; lastDown = down; lastTime = now
+                    lastTime = now
                 } catch (_: Exception) { }
             }
         }
