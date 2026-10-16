@@ -22,10 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppTopBar
 import com.v2ray.ang.ui.compose.verticalScrollbar
+
+// SwiftNG: retro vintage title font (Rye)
+private val SwiftNgTitleFont = FontFamily(Font(R.font.rye_regular))
 
 @Composable
 fun MainTopBar(
@@ -47,7 +52,8 @@ fun MainTopBar(
     val maxMenuHeight = LocalConfiguration.current.screenHeightDp.dp - statusBarHeight - navBarHeight - 20.dp
 
     AppTopBar(
-        title = stringResource(R.string.title_server),
+        title = stringResource(R.string.app_name),
+        titleFontFamily = SwiftNgTitleFont,
         onBackClick = {},
         isLoading = isLoading,
         isSearchActive = showSearch,
