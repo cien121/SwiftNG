@@ -280,6 +280,7 @@ class MainViewModel(
             MainAction.TestAllServers -> testAllRealPing(true)
             MainAction.TestRealAllServers -> testAllRealPing()
             MainAction.AutoSelectBestServer -> autoSelectBestServer()
+            MainAction.ConsumeAutoSelectEvent -> _uiState.update { it.copy(autoSelectEvent = null) }
             MainAction.CancelTesting -> cancelAllPing()
             MainAction.RemoveAllServers -> removeAllServerAsync()
             MainAction.RemoveDuplicateServers -> removeDuplicateServerAsync()
@@ -850,6 +851,15 @@ class MainViewModel(
             .minByOrNull { it.testDelayMillis }
         if (best != null) {
             updateSelectedGuid(best.guid)
+            val restartNeeded = _uiState.value.isRunning
+            val name = best.profile.remarks.ifEmpty { best.profile.server.ifEmpty { best.guid } }
+            // SwiftBox: user feedback + trigger service restart via UI event
+            toast("已选择最快节点：$name（${best.testDelayMillis}ms）" + if (restartNeeded) "，正在重连…" else "")
+            _uiState.update {
+                it.copy(autoSelectEvent = AutoSelectEvent(name, best.testDelayMillis, restartNeeded))
+            }
+        } else {
+            toast("没有可用的测速结果")
         }
         autoSelectAfterTest = false
     }
