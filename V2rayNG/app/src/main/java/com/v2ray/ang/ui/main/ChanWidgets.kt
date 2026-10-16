@@ -35,11 +35,11 @@ val iOSRed = Color(0xFFFF453A)
 val iOSBlue = Color(0xFF0A84FF)
 val iOSOrange = Color(0xFFFF9F0A)
 
-// SwiftBox: purple-blue gradient theme
+// SwiftNG: purple-red gradient theme
 val SwiftPurple = Color(0xFF8B5CF6)
-val SwiftBlue = Color(0xFF3B82F6)
-val SwiftGradient = Brush.horizontalGradient(listOf(SwiftPurple, SwiftBlue))
-val SwiftGradientVertical = Brush.verticalGradient(listOf(SwiftPurple, SwiftBlue))
+val SwiftRed = Color(0xFFEF4444)
+val SwiftGradient = Brush.horizontalGradient(listOf(SwiftPurple, SwiftRed))
+val SwiftGradientVertical = Brush.verticalGradient(listOf(SwiftPurple, SwiftRed))
 // Subtle dark gradient sheen for cards (dark, not flashy)
 val SwiftCardSheen = Brush.linearGradient(
     listOf(Color(0xFF23232A), Color(0xFF1C1C1E), Color(0xFF1E1B2E))
