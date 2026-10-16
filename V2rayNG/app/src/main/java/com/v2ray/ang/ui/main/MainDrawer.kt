@@ -47,8 +47,8 @@ enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRe
     About(R.drawable.ic_about_24dp, R.string.title_about)
 }
 
+// ChanNG: removed Subscriptions, Promotion, About from drawer per user request
 private val primaryDrawerItems = listOf(
-    MainDestination.Subscriptions,
     MainDestination.PerAppProxy,
     MainDestination.Routing,
     MainDestination.UserAssets,
@@ -56,11 +56,9 @@ private val primaryDrawerItems = listOf(
 )
 
 private val drawerItems = primaryDrawerItems + listOf(
-    MainDestination.Promotion,
     MainDestination.Logcat,
     MainDestination.CheckUpdate,
-    MainDestination.BackupRestore,
-    MainDestination.About
+    MainDestination.BackupRestore
 )
 
 @Composable
