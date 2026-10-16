@@ -60,6 +60,7 @@ fun ChanStatusCard(
     protocol: String,
     upSpeed: String = "--",
     downSpeed: String = "--",
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -68,6 +69,7 @@ fun ChanStatusCard(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(24.dp))
             .background(SwiftCardSheen)
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier
@@ -133,7 +135,9 @@ fun ChanQuickCards(
     testResult: String,
     onNodeClick: () -> Unit,
     onTestClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    ipAddress: String = "",
+    ipVersionTag: String = ""
 ) {
     Row(
         modifier = modifier
@@ -166,6 +170,39 @@ fun ChanQuickCards(
                     color = Color.White,
                     maxLines = 1
                 )
+                // SwiftBox: IP + IPv4/IPv6 tag
+                if (ipAddress.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = ipAddress,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF98989F),
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (ipVersionTag.isNotEmpty()) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(
+                                        if (ipVersionTag == "IPv6") Color(0xFF8B5CF6).copy(alpha = 0.25f)
+                                        else Color(0xFF3B82F6).copy(alpha = 0.25f)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = ipVersionTag,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (ipVersionTag == "IPv6") Color(0xFFC4B5FD) else Color(0xFF93C5FD),
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
         // Right: speed test card
