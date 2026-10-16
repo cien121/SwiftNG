@@ -14,7 +14,9 @@ import com.v2ray.ang.dto.TestServiceMessage
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServersCache
 import com.v2ray.ang.dto.entities.SubscriptionCache
+import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.extension.delay
+import com.v2ray.ang.extension.toSpeedString
 import com.v2ray.ang.extension.isComplexType
 import com.v2ray.ang.extension.matchesPattern
 import com.v2ray.ang.extension.moveItem
@@ -85,6 +87,11 @@ class MainViewModel(
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+    // SwiftBox: real-time speed (up, down) display strings
+    private val _speedState = MutableStateFlow("--" to "--")
+    val speedState: StateFlow<Pair<String, String>> = _speedState.asStateFlow()
+    private var speedPollJob: Job? = null
 
     // ---------- Keyword filtering ----------
     @Volatile
@@ -964,6 +971,7 @@ class MainViewModel(
 
     // ---------- Running state ----------
     private fun updateRunningState(running: Boolean, clearTestingText: Boolean = true) {
+        if (running) startSpeedPolling() else stopSpeedPolling()
         if (!running || clearTestingText) testRequests.invalidateCurrent()
         _uiState.update { state ->
             state.copy(
@@ -975,7 +983,50 @@ class MainViewModel(
         }
     }
 
+    // SwiftBox: poll real-time speed every 2s while running
+    private fun startSpeedPolling() {
+        stopSpeedPolling()
+        speedPollJob = viewModelScope.launch(ioDispatcher) {
+            var lastUp = 0L
+            var lastDown = 0L
+            var lastTime = System.currentTimeMillis()
+            // prime the baseline
+            try {
+                val stats = CoreServiceManager.queryAllOutboundTrafficStats()
+                lastUp = stats.filter { it.direction == AppConfig.UPLINK }.sumOf { it.value }
+                lastDown = stats.filter { it.direction == AppConfig.DOWNLINK }.sumOf { it.value }
+            } catch (_: Exception) { }
+            while (true) {
+                delay(2000)
+                if (!_uiState.value.isRunning) {
+                    _speedState.value = "--" to "--"
+                    continue
+                }
+                try {
+                    val now = System.currentTimeMillis()
+                    val dt = (now - lastTime) / 1000.0
+                    val stats = CoreServiceManager.queryAllOutboundTrafficStats()
+                    val up = stats.filter { it.direction == AppConfig.UPLINK }.sumOf { it.value }
+                    val down = stats.filter { it.direction == AppConfig.DOWNLINK }.sumOf { it.value }
+                    if (dt > 0) {
+                        val upSpeed = ((up - lastUp) / dt).toLong().coerceAtLeast(0L).toSpeedString()
+                        val downSpeed = ((down - lastDown) / dt).toLong().coerceAtLeast(0L).toSpeedString()
+                        _speedState.value = upSpeed to downSpeed
+                    }
+                    lastUp = up; lastDown = down; lastTime = now
+                } catch (_: Exception) { }
+            }
+        }
+    }
+
+    private fun stopSpeedPolling() {
+        speedPollJob?.cancel()
+        speedPollJob = null
+        _speedState.value = "--" to "--"
+    }
+
     override fun onCleared() {
+        stopSpeedPolling()
         setupGroupJob?.cancel()
         preloadJob?.cancel()
         selectedGroupLoadJob?.cancel()
