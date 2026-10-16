@@ -116,6 +116,8 @@ class MainViewModel(
     private val testRequests = MainTestRequests()
     private var bulkTestJob: Job? = null
     private var autoSelectAfterTest = false // ChanNG: auto-select best server after test
+    private var autoLatencyJob: Job? = null // SwiftNG: 60s auto latency refresh of current node
+    private val autoLatencyRequestIds = mutableSetOf<String>()
 
     private val initialPageReady = CompletableDeferred<Unit>()
 
@@ -153,6 +155,14 @@ class MainViewModel(
 
             MainServiceEvent.StateStopSuccess -> updateRunningState(false)
             is MainServiceEvent.MeasureDelayResult -> {
+                // SwiftNG: quiet 60s auto-refresh of current node latency (no Testing flash)
+                if (autoLatencyRequestIds.remove(event.requestId)) {
+                    testRequests.completeCurrent(event.requestId)
+                    if (uiState.value.isRunning) {
+                        _uiState.update { it.copy(status = MainStatus.ConnectionTest(event.result)) }
+                    }
+                    return
+                }
                 if (!uiState.value.isRunning || !testRequests.completeCurrent(event.requestId)) return
                 _uiState.update { it.copy(isTesting = testRequests.isTesting, status = MainStatus.ConnectionTest(event.result)) }
             }
@@ -180,6 +190,7 @@ class MainViewModel(
             }
 
             is MainServiceEvent.MeasureDelayCancelled -> {
+                autoLatencyRequestIds.remove(event.requestId)
                 if (testRequests.completeCurrent(event.requestId)) resetTestStatus()
             }
 
@@ -934,6 +945,37 @@ class MainViewModel(
         dataSource.testCurrentServerRealPing(requestId)
     }
 
+    // SwiftNG: auto latency refresh — test once shortly after connect, then every 60s while running
+    private fun startAutoLatencyMonitor() {
+        stopAutoLatencyMonitor()
+        autoLatencyJob = viewModelScope.launch {
+            delay(3_000L)
+            ensureActive()
+            quietTestCurrentLatency()
+            while (true) {
+                ensureActive()
+                delay(60_000L)
+                ensureActive()
+                if (!uiState.value.isRunning) break
+                quietTestCurrentLatency()
+            }
+        }
+    }
+
+    private fun stopAutoLatencyMonitor() {
+        autoLatencyJob?.cancel()
+        autoLatencyJob = null
+        autoLatencyRequestIds.clear()
+    }
+
+    private fun quietTestCurrentLatency() {
+        if (!uiState.value.isRunning || testRequests.isTesting) return
+        val requestId = testRequests.beginCurrent()
+        autoLatencyRequestIds.add(requestId)
+        // Quiet: don't flip isTesting/status to Testing, just refresh the result when it lands
+        dataSource.testCurrentServerRealPing(requestId)
+    }
+
     private fun onTestsFinished(requestId: String) {
         if (testRequests.completeBulk(requestId) == null) return
         resetTestStatus()
@@ -972,6 +1014,7 @@ class MainViewModel(
     // ---------- Running state ----------
     private fun updateRunningState(running: Boolean, clearTestingText: Boolean = true) {
         if (running) startSpeedPolling() else stopSpeedPolling()
+        if (running) startAutoLatencyMonitor() else stopAutoLatencyMonitor()
         if (!running || clearTestingText) testRequests.invalidateCurrent()
         _uiState.update { state ->
             state.copy(
