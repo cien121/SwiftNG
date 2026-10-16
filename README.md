@@ -1,22 +1,22 @@
 # SwiftNG
 
-基于 [v2rayNG](https://github.com/2dust/v2rayNG) 的定制版 Android 代理客户端。
+A refined Android proxy client, customized from [v2rayNG](https://github.com/2dust/v2rayNG) with a focus on speed, clarity, and one-tap control.
 
-## 定制内容
+## Highlights
 
-- **iOS 小组件风主页**：深色底 + 圆角卡片，状态、速度、节点信息一目了然
-- **状态卡即开关**：底部状态卡点击即可连接/断开
-- **自动选择最快节点**：一键测速，自动切换延迟最低的节点
-- **节点底部弹窗**：节点列表收进底部弹窗，不占主页空间
-- **实时速率显示**：上下行速度实时刷新
-- **IPv4/IPv6 标识**：当前节点动态显示走 v4 还是 v6
-- **精简菜单**：去掉推广、关于、订阅分组
+- **Widget-style home** — Dark, rounded-card interface inspired by iOS widgets. Status, speed, and node info at a glance.
+- **Status card as switch** — Tap the bottom status card to connect or disconnect. No floating buttons.
+- **Auto-select fastest node** — One tap tests all nodes and switches to the lowest-latency one, reconnecting automatically.
+- **Live latency** — Current node's latency is tested automatically on connect and refreshed every 60 seconds.
+- **Real-time speed** — Live up/down throughput, refreshed every 2 seconds.
+- **IPv4 / IPv6 badge** — Current node card shows which stack the traffic is actually using.
+- **Clean navigation** — No drawer clutter. Four large shortcuts at the bottom: Per-app Proxy, Routing, Assets, Settings.
 
-## 构建
+## Build
 
-GitHub Actions 自动构建 arm64-v8a 调试包，见 [Releases](https://github.com/cien121/SwiftNG/releases)。
+GitHub Actions builds a signed `arm64-v8a` APK on every push to `master`. Grab the latest from [Releases](https://github.com/cien121/SwiftNG/releases).
 
-## 致谢
+## Credits
 
-- 上游项目：[2dust/v2rayNG](https://github.com/2dust/v2rayNG)
-- 核心：[XTLS/Xray-core](https://github.com/XTLS/Xray-core)
+- Upstream: [2dust/v2rayNG](https://github.com/2dust/v2rayNG)
+- Core: [XTLS/Xray-core](https://github.com/XTLS/Xray-core)
