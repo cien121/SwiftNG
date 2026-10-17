@@ -46,6 +46,15 @@ import java.net.InetSocketAddress
 
 object CoreServiceManager {
 
+    // SwiftNG: centralized traffic-stats cache.
+    // Go side does query-and-reset (counter.Set(0)), so two concurrent callers
+    // (MainViewModel speed polling + NotificationManager) would steal each
+    // other's data. All callers share one cached Go query result here.
+    private val statsCacheLock = Any()
+    private var cachedStatsResult: List<OutboundTrafficStat> = emptyList()
+    private var cachedStatsAt: Long = 0L
+    private const val STATS_CACHE_TTL_MS = 2000L
+
     private val coreController: CoreController = CoreNativeManager.newCoreController(CoreCallback())
     private val mMsgReceive = ReceiveMessageHandler()
     private var currentConfig: ProfileItem? = null
@@ -280,35 +289,52 @@ object CoreServiceManager {
     }
 
     /**
-     * Queries and resets all outbound traffic counters in one core call.
+     * Returns the latest outbound traffic counters, sharing one Go query
+     * across all callers. Go side does query-and-reset, so without this
+     * cache MainViewModel and NotificationManager would steal each other's
+     * data and the status card would show 0.0 B/s.
      * Go side format: tag,direction,value;tag,direction,value;
      */
     fun queryAllOutboundTrafficStats(): List<OutboundTrafficStat> {
         // The stats manager is gone once the core stops, querying it then reaches into freed state.
-        if (!isRunning()) return emptyList()
-
-        val payload = coreController.queryAllOutboundTrafficStats()
-
-        val result = ArrayList<OutboundTrafficStat>()
-
-        payload.split(';').forEach { entry ->
-            if (entry.isBlank()) return@forEach
-
-            val parts = entry.split(',', limit = 3)
-            if (parts.size != 3) return@forEach
-
-            val value = parts[2].toLongOrNull() ?: return@forEach
-
-            result.add(
-                OutboundTrafficStat(
-                    tag = parts[0],
-                    direction = parts[1],
-                    value = value,
-                )
-            )
+        if (!isRunning()) {
+            synchronized(statsCacheLock) {
+                cachedStatsResult = emptyList()
+                cachedStatsAt = 0L
+            }
+            return emptyList()
         }
-//        LogUtil.d(AppConfig.TAG, "Queried outbound traffic stats: $result")
-        return result
+
+        synchronized(statsCacheLock) {
+            val now = System.currentTimeMillis()
+            if (now - cachedStatsAt < STATS_CACHE_TTL_MS && cachedStatsAt > 0) {
+                return cachedStatsResult
+            }
+
+            val payload = coreController.queryAllOutboundTrafficStats()
+
+            val result = ArrayList<OutboundTrafficStat>()
+
+            payload.split(';').forEach { entry ->
+                if (entry.isBlank()) return@forEach
+
+                val parts = entry.split(',', limit = 3)
+                if (parts.size != 3) return@forEach
+
+                val value = parts[2].toLongOrNull() ?: return@forEach
+
+                result.add(
+                    OutboundTrafficStat(
+                        tag = parts[0],
+                        direction = parts[1],
+                        value = value,
+                    )
+                )
+            }
+            cachedStatsResult = result
+            cachedStatsAt = now
+            return result
+        }
     }
 
     /**
