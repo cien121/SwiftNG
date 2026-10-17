@@ -2,6 +2,7 @@ package com.v2ray.ang.core
 
 import android.content.Context
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.util.DiagTimer
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import go.Seq
@@ -75,10 +76,22 @@ object CoreNativeManager {
      * @return Delay in milliseconds, or -1 if test failed
      */
     fun measureOutboundDelay(config: String, testUrl: String): Long {
+        // DIAG: time the JNI/Go boundary separately so we know whether the
+        // slowness is inside the Go core or in the Kotlin-side setup.
+        val start = android.os.SystemClock.elapsedRealtime()
         return try {
-            Libv2ray.measureOutboundDelay(config, testUrl)
+            val r = Libv2ray.measureOutboundDelay(config, testUrl)
+            DiagTimer.summary(
+                "jni-measureOutboundDelay", android.os.SystemClock.elapsedRealtime() - start,
+                "result=${r}ms testUrl=$testUrl"
+            )
+            r
         } catch (e: Exception) {
             LogUtil.e(AppConfig.TAG, "Failed to measure outbound delay", e)
+            DiagTimer.summary(
+                "jni-measureOutboundDelay", android.os.SystemClock.elapsedRealtime() - start,
+                "result=EXCEPTION testUrl=$testUrl"
+            )
             -1L
         }
     }

@@ -28,6 +28,7 @@ import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.service.DialerNativeService
 import com.v2ray.ang.service.DialerWebviewService
 import com.v2ray.ang.service.NetworkMonitor
+import com.v2ray.ang.util.DiagTimer
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.CoroutineScope
@@ -136,11 +137,18 @@ object CoreServiceManager {
 
     @Throws(Exception::class)
     private fun launchCore(service: Service, vpnInterface: ParcelFileDescriptor?, isReload: Boolean = false) {
+        // DIAG: time each phase of VPN connection establishment.
+        val launchStart = android.os.SystemClock.elapsedRealtime()
         val guid = MmkvManager.getSelectServer() ?: error("No server selected")
         val config = MmkvManager.decodeServerConfig(guid) ?: error("Failed to decode server config")
+        val label = "${config.remarks} [${config.configType}]"
+        DiagTimer.mark("vpnConnect-start", label)
 
         LogUtil.i(AppConfig.TAG, "StartCore-Manager: Starting core loop for ${config.remarks}")
+        val cfgStart = android.os.SystemClock.elapsedRealtime()
         val result = CoreConfigManager.getV2rayConfig(service, guid)
+        val cfgMs = android.os.SystemClock.elapsedRealtime() - cfgStart
+        DiagTimer.summary("vpnConnect-configGen", cfgMs, "node=$label")
         LogUtil.d(AppConfig.TAG, result.content)
         if (!result.status) {
             error(result.errorMessage.ifBlank { "Failed to get V2Ray config" })
@@ -162,11 +170,18 @@ object CoreServiceManager {
         if (dialerAddr.isNotNullEmpty()) {
             CoreNativeManager.reconcileBrowserDialer(dialerAddr)
         }
+        val coreStart = android.os.SystemClock.elapsedRealtime()
         coreController.startLoop(result.content, tunFd)
+        val coreStartMs = android.os.SystemClock.elapsedRealtime() - coreStart
+        DiagTimer.summary("vpnConnect-coreStartLoop", coreStartMs, "node=$label")
 
         if (!isRunning()) {
             error("Core failed to start")
         }
+        DiagTimer.summary(
+            "vpnConnect", android.os.SystemClock.elapsedRealtime() - launchStart,
+            "configGen=${cfgMs}ms coreStartLoop=${coreStartMs}ms node=$label"
+        )
 
         if (browserDialer != null) {
             browserDialer!!.stop()

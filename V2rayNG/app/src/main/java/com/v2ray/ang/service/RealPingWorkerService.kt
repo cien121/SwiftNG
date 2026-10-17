@@ -10,6 +10,7 @@ import com.v2ray.ang.extension.isNotNullEmpty
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.handler.SpeedtestManager
+import com.v2ray.ang.util.DiagTimer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -106,8 +107,15 @@ class RealPingWorkerService(
 
     private suspend fun startRealPing(guid: String): Long {
         val retFailure = -1L
+        val testStart = android.os.SystemClock.elapsedRealtime()
+        var tcpMs = -1L
+        var cfgMs = -1L
+        var jniMs = -1L
 
         val config = MmkvManager.decodeServerConfig(guid) ?: return retFailure
+        val label = "${config.remarks} [${config.configType}]"
+        DiagTimer.mark("realPing-start", label)
+
         if (!config.configType.isComplexType()
             && config.configType != EConfigType.HYSTERIA2
             && config.configType != EConfigType.WIREGUARD
@@ -117,19 +125,41 @@ class RealPingWorkerService(
         ) {
             val url = config.server.orEmpty()
             val port = config.serverPort.orEmpty().toInt()
+            val t0 = android.os.SystemClock.elapsedRealtime()
             val tcpTime = SpeedtestManager.socketConnectTime(url, port, 1000)
+            tcpMs = android.os.SystemClock.elapsedRealtime() - t0
             if (tcpTime <= -1L) {
+                DiagTimer.summary(
+                    "realPing", android.os.SystemClock.elapsedRealtime() - testStart,
+                    "tcpPrecheck=FAILED(${tcpMs}ms) node=$label"
+                )
                 return retFailure
             }
         }
 
+        val c0 = android.os.SystemClock.elapsedRealtime()
         val configResult = CoreConfigManager.getV2rayConfig4Speedtest(context, guid)
+        cfgMs = android.os.SystemClock.elapsedRealtime() - c0
         if (!configResult.status) {
+            DiagTimer.summary(
+                "realPing", android.os.SystemClock.elapsedRealtime() - testStart,
+                "tcpPrecheck=${tcpMs}ms configGen=FAILED(${cfgMs}ms) node=$label"
+            )
             return retFailure
         }
-        return RealPingExecutionLimiter.run(config.configType) {
-            CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl())
+        val result = RealPingExecutionLimiter.run(config.configType) {
+            val j0 = android.os.SystemClock.elapsedRealtime()
+            try {
+                CoreNativeManager.measureOutboundDelay(configResult.content, SettingsManager.getDelayTestUrl())
+            } finally {
+                jniMs = android.os.SystemClock.elapsedRealtime() - j0
+            }
         }
+        DiagTimer.summary(
+            "realPing", android.os.SystemClock.elapsedRealtime() - testStart,
+            "tcpPrecheck=${tcpMs}ms configGen=${cfgMs}ms goMeasure=${jniMs}ms result=${result}ms node=$label"
+        )
+        return result
     }
 
     private fun startTcping(guid: String): Long {

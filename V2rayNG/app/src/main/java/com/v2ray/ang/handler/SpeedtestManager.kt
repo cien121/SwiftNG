@@ -3,6 +3,7 @@ package com.v2ray.ang.handler
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.dto.IPAPIInfo
 import com.v2ray.ang.dto.UrlContentRequest
+import com.v2ray.ang.util.DiagTimer
 import com.v2ray.ang.util.HttpUtil
 import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.LogUtil
@@ -27,13 +28,34 @@ object SpeedtestManager {
      */
     fun socketConnectTime(url: String, port: Int, timeoutMs: Int = 1500): Long {
         var socket: Socket? = null
-        val start = System.currentTimeMillis()
+        val start = android.os.SystemClock.elapsedRealtime()
 
         try {
-            socket = Socket()
-            socket.connect(InetSocketAddress(url, port), timeoutMs)
+            // DIAG: split DNS resolution from TCP connect to tell them apart.
+            val dnsStart = android.os.SystemClock.elapsedRealtime()
+            val address = try {
+                java.net.InetAddress.getByName(url)
+            } catch (e: UnknownHostException) {
+                LogUtil.e(AppConfig.TAG, "Unknown host: $url", e)
+                DiagTimer.summary(
+                    "socketConnectTime", android.os.SystemClock.elapsedRealtime() - start,
+                    "dns=FAILED(${android.os.SystemClock.elapsedRealtime() - dnsStart}ms)"
+                )
+                return -1
+            }
+            val dnsMs = android.os.SystemClock.elapsedRealtime() - dnsStart
 
-            return System.currentTimeMillis() - start
+            socket = Socket()
+            val connStart = android.os.SystemClock.elapsedRealtime()
+            socket.connect(InetSocketAddress(address, port), timeoutMs)
+            val connMs = android.os.SystemClock.elapsedRealtime() - connStart
+
+            val totalMs = android.os.SystemClock.elapsedRealtime() - start
+            DiagTimer.summary(
+                "socketConnectTime", totalMs,
+                "dns=${dnsMs}ms tcpConnect=${connMs}ms host=$url:$port"
+            )
+            return totalMs
         } catch (e: UnknownHostException) {
             LogUtil.e(AppConfig.TAG, "Unknown host: $url", e)
         } catch (e: IOException) {
