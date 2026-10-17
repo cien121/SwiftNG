@@ -218,7 +218,6 @@ object AppConfig {
     const val HYSTERIA = "hysteria://"
     const val HYSTERIA2 = "hysteria2://"
     const val HY2 = "hy2://"
-    const val ANYTLS = "anytls://"
     const val V2RAYNFMTS = "v2rayn://"
 
     /** Give a good name to this, IDK*/
@@ -355,4 +354,3 @@ object AppConfig {
 
     val OBSERVATORY_DURATION_PATTERN = Regex("""[1-9]\d*(ms|s|m|h)""")
 }
-
