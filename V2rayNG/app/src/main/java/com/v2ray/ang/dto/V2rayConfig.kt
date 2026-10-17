@@ -122,7 +122,6 @@ data class V2rayConfig(
             var realitySettings: TlsSettingsBean? = null,
             var grpcSettings: GrpcSettingsBean? = null,
             var hysteriaSettings: HysteriaSettingsBean? = null,
-            var anytlsSettings: AnytlsSettingsBean? = null,
             var finalmask: Any? = null,
             val dsSettings: Any? = null,
             var sockopt: SockoptBean? = null
@@ -252,10 +251,6 @@ data class V2rayConfig(
             data class HysteriaSettingsBean(
                 var version: Int,
                 var auth: String? = null
-            )
-
-            data class AnytlsSettingsBean(
-                var password: String? = null
             )
 
             //https://xtls.github.io/config/transport.html#finalmaskobject
@@ -472,4 +467,3 @@ data class V2rayConfig(
         }
     }
 }
-
