@@ -49,8 +49,8 @@ jobs:
         unzip -q /tmp/clt.zip -d $SDK/cmdline-tools
         mv $SDK/cmdline-tools/cmdline-tools $SDK/cmdline-tools/latest
         yes | $SDK/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
-        $SDK/cmdline-tools/latest/bin/sdkmanager "ndk;27.2.12479018" >/dev/null
-        echo "ANDROID_NDK_HOME=$SDK/ndk/27.2.12479018" >> $GITHUB_ENV
+        $SDK/cmdline-tools/latest/bin/sdkmanager "ndk;29.0.14206865" >/dev/null
+        echo "ANDROID_NDK_HOME=$SDK/ndk/29.0.14206865" >> $GITHUB_ENV
 
     - name: Install gomobile
       run: |
