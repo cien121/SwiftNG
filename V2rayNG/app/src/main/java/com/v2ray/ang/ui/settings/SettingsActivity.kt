@@ -150,7 +150,6 @@ fun SettingsScreen(
     var socksEnableUdp by rememberMmkvBool(AppConfig.PREF_SOCKS_ENABLE_UDP, AppConfig.DEFAULT_SOCKS_ENABLE_UDP)
     var proxySharing by rememberMmkvBool(AppConfig.PREF_PROXY_SHARING, false)
 
-    var speedEnabled by rememberMmkvBool(AppConfig.PREF_SPEED_ENABLED, false)
     var confirmRemove by rememberMmkvBool(AppConfig.PREF_CONFIRM_REMOVE, false)
     var doubleColumnDisplay by rememberMmkvBool(AppConfig.PREF_DOUBLE_COLUMN_DISPLAY, false)
     var language by remember {
@@ -226,12 +225,6 @@ fun SettingsScreen(
                 onExpandedChange = { uiSettingsExpanded = it }
             )
             if (uiSettingsExpanded) {
-                SettingsSwitchItem(
-                    title = stringResource(R.string.title_pref_speed_enabled),
-                    summary = stringResource(R.string.summary_pref_speed_enabled),
-                    checked = speedEnabled,
-                    onCheckedChange = { speedEnabled = it }
-                )
                 SettingsSwitchItem(
                     title = stringResource(R.string.title_pref_confirm_remove),
                     summary = stringResource(R.string.summary_pref_confirm_remove),
