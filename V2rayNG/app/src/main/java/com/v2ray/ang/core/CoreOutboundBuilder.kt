@@ -31,6 +31,7 @@ object CoreOutboundBuilder {
             EConfigType.TROJAN -> toOutboundTrojan(profileItem)
             EConfigType.WIREGUARD -> toOutboundWireguard(profileItem)
             EConfigType.HYSTERIA2 -> toOutboundHysteria2(profileItem)
+            EConfigType.ANYTLS -> toOutboundAnytls(profileItem)
             EConfigType.HTTP -> toOutboundHttp(profileItem)
             else -> null
         }
@@ -53,6 +54,7 @@ object CoreOutboundBuilder {
                 || protocol.equals(EConfigType.WIREGUARD.name, true)
                 || protocol.equals(EConfigType.HYSTERIA2.name, true)
                 || protocol.equals(EConfigType.HYSTERIA.name, true)
+                || protocol.equals(EConfigType.ANYTLS.name, true)
             ) {
                 muxEnabled = false
             } else if (outbound.streamSettings?.network == NetworkType.XHTTP.type) {
@@ -87,7 +89,8 @@ object CoreOutboundBuilder {
             EConfigType.SHADOWSOCKS,
             EConfigType.SOCKS,
             EConfigType.HTTP,
-            EConfigType.TROJAN -> OutboundBean(
+            EConfigType.TROJAN,
+            EConfigType.ANYTLS -> OutboundBean(
                 protocol = configType.name.lowercase(),
                 settings = OutboundBean.OutSettingsBean(),
                 streamSettings = OutboundBean.StreamSettingsBean()
@@ -200,6 +203,26 @@ object CoreOutboundBuilder {
             populateTlsSettings(it, profileItem, sni)
         }
 
+        return outboundBean
+    }
+
+    private fun toOutboundAnytls(profileItem: ProfileItem): OutboundBean? {
+        val outboundBean = createInitOutbound(EConfigType.ANYTLS) ?: return null
+        outboundBean.settings?.let { settings ->
+            settings.address = getServerAddress(profileItem)
+            settings.port = profileItem.serverPort.orEmpty().toIntOrNull() ?: return null
+            settings.password = profileItem.password
+        }
+        if (profileItem.security.isNullOrBlank()) {
+            profileItem.security = AppConfig.TLS
+        }
+        profileItem.network = NetworkType.ANYTLS.type
+        val sni = outboundBean.streamSettings?.let {
+            populateTransportSettings(it, profileItem)
+        }
+        outboundBean.streamSettings?.let {
+            populateTlsSettings(it, profileItem, sni)
+        }
         return outboundBean
     }
 
@@ -367,6 +390,13 @@ object CoreOutboundBuilder {
                     sni = host
                 }
                 streamSettings.tcpSettings = tcpSetting
+            }
+
+            NetworkType.ANYTLS.type -> {
+                streamSettings.anytlsSettings = OutboundBean.StreamSettingsBean.AnytlsSettingsBean(
+                    password = profileItem.password
+                )
+                sni = profileItem.sni ?: host
             }
 
             NetworkType.KCP.type -> {
@@ -706,3 +736,4 @@ object CoreOutboundBuilder {
         }
     }
 }
+
