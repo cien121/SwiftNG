@@ -110,14 +110,16 @@ object CoreConfigManager {
             policyObj.add("system", systemObj)
             json.add("policy", policyObj)
         } else {
-            // Ensure the stats-related system block exists alongside any user-defined policy
+            // Ensure the stats-related system block exists alongside any user-defined policy.
+            // SwiftNG: also patch an existing system block that lacks the stats flags.
             val policyObj = json.get("policy").asJsonObject
-            if (!policyObj.has("system")) {
-                val systemObj = JsonObject()
-                systemObj.addProperty("statsOutboundUplink", true)
-                systemObj.addProperty("statsOutboundDownlink", true)
-                policyObj.add("system", systemObj)
+            val systemObj = if (policyObj.has("system")) {
+                policyObj.get("system").asJsonObject
+            } else {
+                JsonObject().also { policyObj.add("system", it) }
             }
+            systemObj.addProperty("statsOutboundUplink", true)
+            systemObj.addProperty("statsOutboundDownlink", true)
         }
 
         if (!needTun()) {
