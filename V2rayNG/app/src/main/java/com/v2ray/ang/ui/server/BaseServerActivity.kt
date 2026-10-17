@@ -394,16 +394,14 @@ abstract class BaseServerActivity : BaseComponentActivity() {
 
             if (config.configType == EConfigType.TROJAN ||
                 config.configType == EConfigType.SHADOWSOCKS ||
-                config.configType == EConfigType.HYSTERIA2 ||
-                config.configType == EConfigType.ANYTLS
+                config.configType == EConfigType.HYSTERIA2
             ) {
                 return false
             }
         }
 
         if (
-            (config.configType == EConfigType.TROJAN ||
-                config.configType == EConfigType.ANYTLS) &&
+            config.configType == EConfigType.TROJAN &&
             config.security.isNullOrBlank()
         ) {
             toast(R.string.server_lab_stream_security)
@@ -510,4 +508,3 @@ abstract class BaseServerActivity : BaseComponentActivity() {
         }
     }
 }
-
