@@ -13,8 +13,8 @@ android {
         applicationId = "com.chan.v2rayng"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1009
-        versionName = "1.0.9-swiftng"
+        versionCode = 1010
+        versionName = "1.0.10-swiftng"
 
         val abiFilterList = (properties["ABI_FILTERS"] as? String)?.split(';')
         splits {
