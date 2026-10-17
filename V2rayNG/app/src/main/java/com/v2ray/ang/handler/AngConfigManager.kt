@@ -12,7 +12,6 @@ import com.v2ray.ang.dto.entities.SubscriptionCache
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.isNotNullEmpty
-import com.v2ray.ang.fmt.AnytlsFmt
 import com.v2ray.ang.fmt.CustomFmt
 import com.v2ray.ang.fmt.Hysteria2Fmt
 import com.v2ray.ang.fmt.ShadowsocksFmt
@@ -49,7 +48,6 @@ object AngConfigManager {
             EConfigType.WIREGUARD.protocolScheme to WireguardFmt::parse,
             EConfigType.HYSTERIA2.protocolScheme to Hysteria2Fmt::parse,
             AppConfig.HY2 to Hysteria2Fmt::parse,
-            EConfigType.ANYTLS.protocolScheme to AnytlsFmt::parse,
         )
     }
 
@@ -165,7 +163,6 @@ object AngConfigManager {
                 EConfigType.TROJAN -> TrojanFmt.toUri(config)
                 EConfigType.WIREGUARD -> WireguardFmt.toUri(config)
                 EConfigType.HYSTERIA2 -> Hysteria2Fmt.toUri(config)
-                EConfigType.ANYTLS -> AnytlsFmt.toUri(config)
                 else -> {}
             }
         } catch (e: Exception) {
@@ -641,4 +638,3 @@ object AngConfigManager {
         return "$addrPart : ${port ?: ""}"
     }
 }
-
