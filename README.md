@@ -27,6 +27,10 @@ VMess · VLESS · Trojan · Shadowsocks · WireGuard · Hysteria2 · TUIC · **A
 
 GitHub Actions builds a signed `arm64-v8a` APK on every push to `master`. Grab the latest from [Releases](https://github.com/cien121/SwiftNG/releases).
 
+## Related
+
+- [ShellPilot](https://github.com/cien121/shellpilot) — SSH terminal client for Android.
+
 ## Credits
 
 - Upstream: [2dust/v2rayNG](https://github.com/2dust/v2rayNG)
