@@ -356,6 +356,39 @@ object Utils {
     }
 
     /**
+     * Geo data files bundled inside the APK.
+     *
+     * On first launch, copies each bundled file into the user asset directory
+     * only if it is missing there. Existing files are never overwritten, so
+     * users can still update to newer versions via the asset download page.
+     *
+     * @param context The context to use.
+     */
+    fun copyBundledGeoAssets(context: Context?) {
+        if (context == null) return
+
+        val destDir = userAssetPath(context)
+        if (destDir.isEmpty()) return
+
+        val bundledFiles = listOf("geoip.dat", "geosite.dat")
+        for (fileName in bundledFiles) {
+            val dest = java.io.File(destDir, fileName)
+            if (dest.exists()) continue
+
+            try {
+                context.assets.open(fileName).use { input ->
+                    dest.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                LogUtil.i(AppConfig.TAG, "Copied bundled geo asset: $fileName")
+            } catch (e: Exception) {
+                LogUtil.e(AppConfig.TAG, "Failed to copy bundled geo asset: $fileName", e)
+            }
+        }
+    }
+
+    /**
      * Get the device ID for XUDP base key.
      *
      * @return The device ID for XUDP base key.
