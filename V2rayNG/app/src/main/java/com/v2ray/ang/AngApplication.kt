@@ -9,6 +9,7 @@ import com.v2ray.ang.AppConfig.ANG_PACKAGE
 import com.v2ray.ang.handler.AppLocaleManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
+import com.v2ray.ang.util.Utils
 import com.v2ray.ang.ui.compose.ThemeManager
 
 class AngApplication : Application() {
@@ -47,5 +48,9 @@ class AngApplication : Application() {
 
         // Initialize theme state from MMKV
         ThemeManager.refresh()
+
+        // Copy bundled geo assets (geoip.dat / geosite.dat) into app_assets
+        // on first launch, only if missing; never overwrites user-updated files
+        Thread { Utils.copyBundledGeoAssets(this) }.start()
     }
 }
